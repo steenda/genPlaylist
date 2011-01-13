@@ -70,9 +70,10 @@ def printTopTags(artist)
    end
 end
 
-Rockstar.lastfm = YAML.load_file('genPlaylist.conf')
+conf = YAML.load_file('genPlaylist.conf')
+Rockstar.lastfm = conf
 
-mpd = MPD.new 'localhost', 6600
+mpd = MPD.new conf['mpd_host'], conf['mpd_port']
 mpd.connect
 
 case $*.length
