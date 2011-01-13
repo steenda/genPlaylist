@@ -1,6 +1,27 @@
 #!/usr/bin/env ruby
+#       genPlaylist.rb
+#
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 2 of the License, or
+#       (at your option) any later version.
+#
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+
 require 'librmpd'
 require 'rockstar'
+
+USAGE = "Usage: genPlaylists.rb 'ARTIST'
+where ARTIST is either empty (current mpd song will be used) or
+the name of an artist"
 
 def handle_error(error)
    case error
@@ -9,6 +30,7 @@ def handle_error(error)
    when :WRONGARGS
       STDERR.puts "Wrong argument count!"
    end
+   STDERR.puts USAGE
    exit 1
 end
 
