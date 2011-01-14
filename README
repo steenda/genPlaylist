@@ -1,5 +1,8 @@
-This Program requires the following ruby gems:
-gem install librmpd rockstar i18n
+requirements:
+- mpd
+- music with correct id3 tags
+- ruby 1.9
+- ruby gems: librmpd rockstar i18n
 
 You need to apply for a lastfm api key here:
 http://www.last.fm/api/

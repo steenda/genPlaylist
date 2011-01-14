@@ -1,6 +1,11 @@
-14.01.11
+2011.01.14-2
+- case-insensitive check for artists
+- uses optparse
+- restructured code
+
+2011.01.14-1
 - case-insensitive check for existing tracks
 - corrected handling of special characters
 
-13.01.11
-- Initial Release
+2011.01.13-1
+- initial release

@@ -19,29 +19,40 @@
 require 'librmpd'
 require 'rockstar'
 require 'iconv'
+require 'optparse'
 
-USAGE = "Usage: genPlaylists.rb opts
-where opts is
--a 'ARTIST'
-or none (currently playing song will be used)"
+options = {}
+conf = YAML.load_file('genPlaylist.conf')
+mpd = MPD.new conf['mpd_host'], conf['mpd_port']
+Rockstar.lastfm = conf
+mpd.connect
 
-def handle_error(error)
-   case error
-   when :NOSONG
-      STDERR.puts "No track specified!"
-   when :WRONGARGS
-      STDERR.puts "invalid arguments"
+# functions
+OptionParser.new do |opts|
+   opts.banner = "Usage: #{File.basename($0)}"
+   opts.on("-h", "--help", "Displays this help info") do
+      puts opts
+      exit 0
    end
-   STDERR.puts USAGE
-   exit 1
+   opts.on("-a", "--artist", "Get top tracks for specified artist") do
+      options[:artist] = true
+   end
+   begin
+      opts.parse!(ARGV)
+   rescue OptionParser::ParseError => e
+      warn e.message
+      puts opts
+      exit 1
+   end
 end
 
-def makeTopTracks(artist,mpd)
+def makeTopTracks(current_artist,mpd)
+   artist = Rockstar::Artist.new(current_artist)
    track_arr = []
    new_playlist = []
    added=0
    puts "fetching top tracks..."
-   own_songs = mpd.find('artist', artist.name)
+   own_songs = mpd.search('artist', artist.name)
    artist.top_tracks.each { |t| track_arr << "#{t.name}" }
    puts "checking for existing tracks..."
 
@@ -52,8 +63,6 @@ def makeTopTracks(artist,mpd)
          added += 1
       end
    end
-
-   puts "done..."
    mpd.clear
    for i in new_playlist do
       mpd.add(i)
@@ -61,49 +70,19 @@ def makeTopTracks(artist,mpd)
    if !mpd.playlist().empty?
       mpd.play(0)
    end
-   puts "added "+added.to_s+" songs!"
+   puts "added #{added.to_s} songs!"
 end
 
-def printTopTags(artist)
-   for i in artist.top_tags do
-      if i.count.to_i>0
-         print i.name+" "
-      end
-   end
-end
-
-conf = YAML.load_file('genPlaylist.conf')
-Rockstar.lastfm = conf
-
-mpd = MPD.new conf['mpd_host'], conf['mpd_port']
-mpd.connect
-
-case $*.length
-when 0
-   if !mpd.playlist().empty?
-      current_artist = mpd.current_song().artist
-   else
-      handle_error(:NOSONG)
-   end
-when 1
-   if $*[0] =~ /^(-h|--help)$/
-      mode = $*[0]
-   else
-      handle_error(:WRONGARGS)
-   end
-when 2
-   if $*[0] =~ /^(-a|-u)$/
-      mode = $*[0]
-      current_artist = $*[1]
-   else
-      handle_error(:WRONGARGS)
-   end
+# main
+if options[:artist]
+   current_artist = ARGV[0]
+elsif !mpd.playlist().empty?
+   current_artist = mpd.current_song().artist
 else
-   handle_error(:WRONGARGS)
+   STDERR.puts "No track specified!"
+   exit 1
 end
 
-
-artist = Rockstar::Artist.new(current_artist)
-makeTopTracks(artist,mpd)
+makeTopTracks(current_artist,mpd)
 
 exit 0
