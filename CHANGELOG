@@ -1,0 +1,6 @@
+14.01.11
+- case-insensitive check for existing tracks
+- corrected handling of special characters
+
+13.01.11
+- Initial Release

@@ -18,17 +18,19 @@
 
 require 'librmpd'
 require 'rockstar'
+require 'iconv'
 
-USAGE = "Usage: genPlaylists.rb 'ARTIST'
-where ARTIST is either empty (current mpd song will be used) or
-the name of an artist"
+USAGE = "Usage: genPlaylists.rb opts
+where opts is
+-a 'ARTIST'
+or none (currently playing song will be used)"
 
 def handle_error(error)
    case error
    when :NOSONG
       STDERR.puts "No track specified!"
    when :WRONGARGS
-      STDERR.puts "Wrong argument count!"
+      STDERR.puts "invalid arguments"
    end
    STDERR.puts USAGE
    exit 1
@@ -44,7 +46,7 @@ def makeTopTracks(artist,mpd)
    puts "checking for existing tracks..."
 
    for i in track_arr do
-      index = own_songs.index {|x| x.title == i }
+      index = own_songs.index {|x| Iconv.iconv('utf-8','iso-8859-15',x.title.downcase) == Iconv.iconv('utf-8','iso-8859-15',i.downcase) }
       if index != nil
          new_playlist << own_songs[index].file
          added += 1
@@ -84,10 +86,22 @@ when 0
       handle_error(:NOSONG)
    end
 when 1
-   current_artist = $*[0]
+   if $*[0] =~ /^(-h|--help)$/
+      mode = $*[0]
+   else
+      handle_error(:WRONGARGS)
+   end
+when 2
+   if $*[0] =~ /^(-a|-u)$/
+      mode = $*[0]
+      current_artist = $*[1]
+   else
+      handle_error(:WRONGARGS)
+   end
 else
    handle_error(:WRONGARGS)
 end
+
 
 artist = Rockstar::Artist.new(current_artist)
 makeTopTracks(artist,mpd)

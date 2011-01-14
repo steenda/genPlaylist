@@ -6,3 +6,4 @@ http://www.last.fm/api/
 
 Then provide the details in a file called 'genPlaylist.conf'
 in the same folder. A sample config file is included.
+If needed you can edit the MPD config within this file too.
