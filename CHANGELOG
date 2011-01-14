@@ -1,3 +1,7 @@
+2011.01.14-3
+- made program silent (added verbose switch)
+- option to generate m3u file
+
 2011.01.14-2
 - case-insensitive check for artists
 - uses optparse
