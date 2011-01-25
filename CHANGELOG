@@ -1,3 +1,7 @@
+2011.01.25-1
+- removed rockstar and i18n gem dependency
+- added simple lastfm lib
+
 2011.01.14-3
 - made program silent (added verbose switch)
 - option to generate m3u file

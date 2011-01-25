@@ -17,15 +17,11 @@
 #       MA 02110-1301, USA.
 
 require 'librmpd'
-require 'rockstar'
 require 'iconv'
 require 'optparse'
+require './glutton_lastfm.rb'
 
 options = {}
-conf = YAML.load_file('genPlaylist.conf')
-mpd = MPD.new conf['mpd_host'], conf['mpd_port']
-Rockstar.lastfm = conf
-mpd.connect
 
 # functions
 OptionParser.new do |opts|
@@ -58,16 +54,15 @@ def genM3u(filename,playlist)
    f.close
 end
 
-def makeTopTracks(current_artist,mpd,options)
-   artist = Rockstar::Artist.new(current_artist)
-   track_arr = []
+def makeTopTracks(current_artist,mpd,options, conf)
+   last = GluttonLastfm.new conf['api_key']
    new_playlist = []
    added = 0
-   track_arr = artist.top_tracks
-   own_songs = mpd.search('artist', artist.name)
+   track_arr = last.artist_top_tracks current_artist
+   own_songs = mpd.search('artist', current_artist)
 
    for i in track_arr do
-      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i.name.downcase) }
+      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i['name'].downcase) }
       if index != nil
          new_playlist.push(own_songs[index].file)
          added += 1
@@ -82,6 +77,10 @@ def makeTopTracks(current_artist,mpd,options)
    return added
 end
 
+conf = YAML.load_file('genPlaylist.conf')
+mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
+mpd.connect
+
 # main
 if options[:artist]
    current_artist = ARGV[0]
@@ -92,7 +91,7 @@ else
    exit 1
 end
 
-added = makeTopTracks(current_artist,mpd,options)
+added = makeTopTracks(current_artist,mpd,options,conf)
 if added > 0
    mpd.play(0)
    if options[:m3u]
