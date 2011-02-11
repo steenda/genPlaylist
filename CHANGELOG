@@ -1,3 +1,6 @@
+2011.02.12-1
+- implemented own way to parse last.fm data
+
 2011.01.25-1
 - removed rockstar and i18n gem dependency
 - added simple lastfm lib

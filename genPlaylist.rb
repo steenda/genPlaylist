@@ -19,7 +19,11 @@
 require 'librmpd'
 require 'iconv'
 require 'optparse'
-require './glutton_lastfm.rb'
+require 'pp'
+require "rexml/document"
+require 'net/http'
+require 'uri'
+require 'yaml'
 
 options = {}
 
@@ -55,14 +59,19 @@ def genM3u(filename,playlist)
 end
 
 def makeTopTracks(current_artist,mpd,options, conf)
-   last = GluttonLastfm.new conf['api_key']
+   track_arr = []
    new_playlist = []
    added = 0
-   track_arr = last.artist_top_tracks current_artist
+   query = "method=artist.gettoptracks" + "&artist=#{URI.escape(current_artist, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))}" + "&api_key=#{conf['api_key']}"
+   source = URI.parse("http://ws.audioscrobbler.com/2.0/")
+   source.query = query
+   response = Net::HTTP.get(source)
+   parsed = REXML::Document.new(response)
+   parsed.elements.each("lfm/toptracks/track/name") { |element| track_arr.push(Hash['title', element.text]) }
    own_songs = mpd.search('artist', current_artist)
 
    for i in track_arr do
-      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i['name'].downcase) }
+      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i['title'].downcase) }
       if index != nil
          new_playlist.push(own_songs[index].file)
          added += 1
