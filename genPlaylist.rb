@@ -86,7 +86,7 @@ def makeTopTracks(current_artist,mpd,options, conf)
    return added
 end
 
-conf = YAML.load_file('genPlaylist.conf')
+conf = YAML.load_file(File.dirname(__FILE__)+'/genPlaylist.conf')
 mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
 mpd.connect
 
