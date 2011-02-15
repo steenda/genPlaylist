@@ -1,3 +1,10 @@
+2011.02.15-1
+- playlist by tag
+- playlists based on similar tracks
+- restructured code
+- if no config file is specified, default values will be used
+- removed verbose switch
+
 2011.02.12-1
 - implemented own way to parse last.fm data
 

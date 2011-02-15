@@ -1,4 +1,2 @@
-api_key: "YOURKEY"
-api_secret: "YOURKEY"
 mpd_host: "localhost"
 mpd_port: "6600"

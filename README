@@ -1,12 +1,23 @@
+currently supported features:
+- generating a playlist based on last.fm top tracks for an artist
+- generating an m3u file for a playlist
+- playlist by tag
+- playlists based on similar tracks
+
+todo:
+- playlist based on top tracks of recommended artists
+
 requirements:
 - mpd
 - music with correct id3 tags
 - ruby 1.9
 - ruby gems: librmpd
 
-You need to apply for a lastfm api key here:
-http://www.last.fm/api/
+If needed you can edit the MPD config within a file called 'genPlaylist.conf'.
 
-Then provide the details in a file called 'genPlaylist.conf'
-in the same folder. A sample config file is included.
-If needed you can edit the MPD config within this file too.
+Usage: genPlaylist.rb
+    -h, --help                       Displays this help info
+    -a, --artist                     Get top tracks for specified artist
+    -s, --similar                    Get similar tracks for currently playing song
+    -t, --tag                        Get top tracks for specified tag
+    -m, --m3u                        Generate m3u file

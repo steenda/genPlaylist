@@ -19,15 +19,106 @@
 require 'librmpd'
 require 'iconv'
 require 'optparse'
-require 'pp'
 require "rexml/document"
 require 'net/http'
 require 'uri'
 require 'yaml'
 
-options = {}
+API_KEY = "b25b959554ed76058ac220b7b2e0a026"
+BASE_URL = "http://ws.audioscrobbler.com/2.0/"
 
 # functions
+def genM3u(filename,playlist)
+   f = File.open("top_#{filename}.m3u","w")
+   playlist.each {|i| f.puts(i.file)}
+   f.close
+end
+
+def queryLastFM(query)
+   track_arr = []
+   source = URI.parse(BASE_URL)
+   source.query = query  + "&api_key=#{API_KEY}"
+   parsed = REXML::Document.new(Net::HTTP.get(source))
+   case query
+   when
+      if query =~ /^.*artist\.gettoptracks.*$/
+         parsed.elements.each("lfm/toptracks/track") { |element| track_arr.push(Hash['title', element[1].text, 'artist', element[15][1].text]) }
+      end
+   when
+      if query =~ /^.*track\.getsimilar.*$/
+         parsed.elements.each("lfm/similartracks/track") { |element| track_arr.push(Hash['title', element[1].text, 'artist', element[15][1].text]) }
+      end
+   when
+      if query =~ /^.*tag\.gettoptracks.*$/
+         parsed.elements.each("lfm/toptracks/track") { |element| track_arr.push(Hash['title', element[1].text, 'artist', element[11][1].text]) }
+      end
+   end
+
+   return track_arr
+end
+
+def addExistingTracks(track_arr, mpd)
+   artist_arr = []
+   new_playlist = []
+   own_songs = []
+   tmp = []
+   added = 0
+
+   track_arr.each{|x| artist_arr.push(Hash['artist', x['artist']])}
+   for i in artist_arr.uniq do
+      tmp = mpd.search('artist', i['artist'])
+      if tmp.empty?
+         track_arr.delete_if {|x| x['artist'] == i['artist'] }
+      else
+         own_songs += tmp
+      end
+   end
+
+   for i in track_arr do
+      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i['title'].downcase) }
+      if index != nil
+         new_playlist.push(own_songs[index].file)
+         added += 1
+      end
+   end
+   mpd.clear
+   new_playlist.each {|j| mpd.add(j)}
+
+   return added
+end
+
+def makeTopTracks(current_artist,mpd)
+   query = "method=artist.gettoptracks" + "&artist=#{URI.encode(current_artist)}"
+   track_arr = queryLastFM(query)
+
+   return addExistingTracks(track_arr, mpd)
+end
+
+def makeSimilarTracks(mpd)
+   query = "method=track.getsimilar" + "&artist=#{URI.encode(mpd.current_song().artist)}" + "&track=#{URI.encode(mpd.current_song().title)}"
+   track_arr = queryLastFM(query)
+
+   return addExistingTracks(track_arr, mpd)
+end
+
+def makeTopTags(tag,mpd)
+   query = "method=tag.gettoptracks" + "&tag=#{URI.encode(tag)}"
+   track_arr = queryLastFM(query)
+
+   return addExistingTracks(track_arr, mpd)
+end
+
+# main
+added = 0
+options = {}
+if File.exist?(File.dirname(__FILE__)+'/genPlaylist.conf')
+   conf = YAML.load_file(File.dirname(__FILE__)+'/genPlaylist.conf')
+   mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
+else
+   mpd = MPD.new("localhost", 6600)
+end
+mpd.connect
+
 OptionParser.new do |opts|
    opts.banner = "Usage: #{File.basename($0)}"
    opts.on("-h", "--help", "Displays this help info") do
@@ -36,12 +127,31 @@ OptionParser.new do |opts|
    end
    opts.on("-a", "--artist", "Get top tracks for specified artist") do
       options[:artist] = true
+      if ARGV[0] != nil
+         added = makeTopTracks(ARGV[0],mpd)
+      elsif !mpd.playlist().empty?
+         added = makeTopTracks(mpd.current_song().artist,mpd)
+      else
+         STDERR.puts "No track specified!"
+         exit 1
+      end
+   end
+   opts.on("-s", "--similar", "Get similar tracks for currently playing song") do
+      options[:similar] = true
+      if !mpd.playlist().empty?
+         added = makeSimilarTracks(mpd)
+      else
+         STDERR.puts "No track playing!"
+         exit 1
+      end
+   end
+   opts.on("-t", "--tag", "Get top tracks for specified tag") do
+      options[:tag] = true
+      param = ARGV[0]
+      added = makeTopTags(param,mpd)
    end
    opts.on("-m", "--m3u", "Generate m3u file") do
       options[:m3u] = true
-   end
-   opts.on("-v", "--verbose", "Verbose output") do
-      options[:verbose] = true
    end
    begin
       opts.parse!(ARGV)
@@ -52,62 +162,13 @@ OptionParser.new do |opts|
    end
 end
 
-def genM3u(filename,playlist)
-   f = File.open("top_#{filename}.m3u","w")
-   playlist.each {|i| f.puts(i.file)}
-   f.close
-end
-
-def makeTopTracks(current_artist,mpd,options, conf)
-   track_arr = []
-   new_playlist = []
-   added = 0
-   query = "method=artist.gettoptracks" + "&artist=#{URI.escape(current_artist, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))}" + "&api_key=#{conf['api_key']}"
-   source = URI.parse("http://ws.audioscrobbler.com/2.0/")
-   source.query = query
-   response = Net::HTTP.get(source)
-   parsed = REXML::Document.new(response)
-   parsed.elements.each("lfm/toptracks/track/name") { |element| track_arr.push(Hash['title', element.text]) }
-   own_songs = mpd.search('artist', current_artist)
-
-   for i in track_arr do
-      index = own_songs.index {|j| Iconv.conv('utf-8','iso-8859-15',j.title.downcase) == Iconv.conv('utf-8','iso-8859-15',i['title'].downcase) }
-      if index != nil
-         new_playlist.push(own_songs[index].file)
-         added += 1
-         if options[:verbose]
-            puts "+ #{own_songs[index]}"
-         end
-      end
-   end
-   mpd.clear
-   new_playlist.each {|i| mpd.add(i)}
-
-   return added
-end
-
-conf = YAML.load_file(File.dirname(__FILE__)+'/genPlaylist.conf')
-mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
-mpd.connect
-
-# main
-if options[:artist]
-   current_artist = ARGV[0]
-elsif !mpd.playlist().empty?
-   current_artist = mpd.current_song().artist
-else
-   STDERR.puts "No track specified!"
-   exit 1
-end
-
-added = makeTopTracks(current_artist,mpd,options,conf)
 if added > 0
    mpd.play(0)
    if options[:m3u]
       genM3u(mpd.current_song().artist,mpd.playlist())
    end
 else
-   STDERR.puts "No tracks added!"
+   STDERR.puts "Could not generate playlist!"
 end
 
 exit 0
