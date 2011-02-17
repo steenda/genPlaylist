@@ -17,7 +17,6 @@
 #       MA 02110-1301, USA.
 
 require 'librmpd'
-require 'iconv'
 require 'optparse'
 require "rexml/document"
 require 'net/http'
@@ -37,8 +36,8 @@ class Song
       puts 'Song.initialize: wrong parameter count!'
     else
       if args.size == 1
-    @title = Iconv.conv('utf-8','iso-8859-15',REXML::XPath.first(args[0], "name").text)
-    @artist = Iconv.conv('utf-8','iso-8859-15',REXML::XPath.first(args[0], "artist/name").text)
+    @title = REXML::XPath.first(args[0], "name").text
+    @artist = REXML::XPath.first(args[0], "artist/name").text
       else
     @title = args[0]
     @artist = args[1]
@@ -82,8 +81,10 @@ def addExistingTracks(track_arr, mpd)
     end
   end
 
+
   for found in track_arr do
-    index = own_songs.index {|own| Iconv.conv('utf-8','iso-8859-15',own.title.downcase) == found.title.downcase }
+
+    index = own_songs.index {|own| own.title.casecmp(found.title) == 0 }
     if index != nil
       new_playlist.push(own_songs[index].file)
       added += 1
