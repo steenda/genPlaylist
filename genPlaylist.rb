@@ -60,15 +60,7 @@ def queryLastFM(query)
   source = URI.parse(BASE_URL)
   source.query = query  + "&api_key=#{API_KEY}"
   parsed = REXML::Document.new(Net::HTTP.get(source))
-
-  case query
-  when /artist\.gettoptracks/
-      parsed.elements.each("lfm/toptracks/track") { |element| track_arr.push(Song.new(element)) }
-  when /track\.getsimilar/
-      parsed.elements.each("lfm/similartracks/track") { |element| track_arr.push(Song.new(element)) }
-  when /tag\.gettoptracks/
-      parsed.elements.each("lfm/toptracks/track") { |element| track_arr.push(Song.new(element)) }
-  end
+  parsed.elements.each("//track") { |element| track_arr.push(Song.new(element)) }
 
   return track_arr
 end
