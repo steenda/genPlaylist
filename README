@@ -13,9 +13,9 @@ requirements:
 - ruby 1.9
 - ruby gems: librmpd
 
-If needed you can edit the MPD config within a file called '~/.config/genPlaylist/genPlaylist.conf'.
+If needed you can edit the MPD config within a file called '~/.config/genplaylist/genplaylist.conf'.
 
-Usage: genPlaylist.rb
+Usage: genplaylist.rb
     -h, --help                       Displays this help info
     -a, --artist                     Get top tracks for specified artist
     -s, --similar                    Get similar tracks for currently playing song
