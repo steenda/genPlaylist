@@ -28,8 +28,8 @@ BASE_URL = "http://ws.audioscrobbler.com/2.0/"
 
 # classes
 class Song
-  attr_accessor :title
-  attr_accessor :artist
+  attr_reader :title
+  attr_reader :artist
 
   def initialize(*args)
     if args.size < 1  || args.size > 2
@@ -83,15 +83,16 @@ def addExistingTracks(track_arr, mpd)
 
 
   for found in track_arr do
-
-    index = own_songs.index {|own| own.title.casecmp(found.title) == 0 }
+#    puts found.artist + " - " + found.title
+    index = own_songs.index {|own| own.title.casecmp(found.title) == 0 rescue nil}
+#    puts index
     if index != nil
-      new_playlist.push(own_songs[index].file)
+      new_playlist.push(own_songs[index])
       added += 1
     end
   end
   mpd.clear
-  new_playlist.each {|j| mpd.add(j)}
+  new_playlist.each {|j| mpd.add(j.file)}
 
   return added
 end
