@@ -13,7 +13,7 @@ requirements:
 - ruby 1.9
 - ruby gems: librmpd
 
-If needed you can edit the MPD config within a file called 'genPlaylist.conf'.
+If needed you can edit the MPD config within a file called '~/.config/genPlaylist/genPlaylist.conf'.
 
 Usage: genPlaylist.rb
     -h, --help                       Displays this help info
@@ -21,3 +21,4 @@ Usage: genPlaylist.rb
     -s, --similar                    Get similar tracks for currently playing song
     -t, --tag                        Get top tracks for specified tag
     -m, --m3u                        Generate m3u file
+

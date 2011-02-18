@@ -121,8 +121,9 @@ end
 # main
 added = 0
 options = {}
-if File.exist?(File.dirname(__FILE__)+'/genPlaylist.conf')
-  conf = YAML.load_file(File.dirname(__FILE__)+'/genPlaylist.conf')
+
+if File.exist?(ENV['HOME']+'/.config/genPlaylist/genPlaylist.conf')
+  conf = YAML.load_file(ENV['HOME']+'/.config/genPlaylist/genPlaylist.conf')
   mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
 else
   mpd = MPD.new("localhost", 6600)
@@ -131,10 +132,6 @@ mpd.connect
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($0)}"
-  opts.on("-h", "--help", "Displays this help info") do
-    puts opts
-    exit 0
-  end
   opts.on("-a", "--artist", "Get top tracks for specified artist") do
     options[:artist] = true
     if ARGV[0] != nil
@@ -163,6 +160,10 @@ OptionParser.new do |opts|
   opts.on("-m", "--m3u", "Generate m3u file") do
     options[:m3u] = true
   end
+  opts.on("-h", "--help", "Displays this help info") do
+    puts opts
+    exit 0
+  end
   begin
     opts.parse!(ARGV)
   rescue OptionParser::ParseError => e
@@ -177,8 +178,8 @@ if added > 0
   if options[:m3u]
     genM3u(mpd.current_song().artist,mpd.playlist())
   end
-elsif !options[:tag] && !options[:similar] && !options[:artist]
-  STDERR.puts "Please specify operation!"
+elsif options[:tag] ^ options[:similar] ^ !options[:artist]
+  STDERR.puts "Please specify one operation!"
   exit 1
 else
   STDERR.puts "Could not generate playlist!"
