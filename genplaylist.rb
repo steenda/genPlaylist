@@ -73,7 +73,7 @@ def addExistingTracks(track_arr, mpd)
 
   track_arr.each{|x| artist_arr.push(x.artist)}
   for i in artist_arr.uniq do
-    tmp = mpd.search('artist', i)
+    tmp = mpd.find('artist', i)
     if tmp.empty?
       track_arr.delete_if {|x| x.artist == i }
     else
@@ -83,7 +83,7 @@ def addExistingTracks(track_arr, mpd)
 
   for found in track_arr do
     index = own_songs.index {|own| own.title.casecmp(found.title) == 0 rescue nil}
-#    puts found.artist + " - " + found.title + " at " + index
+    #puts (index == nil ? "-" : "+") + found.artist + " - " + found.title
     if index != nil
       new_playlist.push(own_songs[index])
       added += 1
@@ -104,14 +104,14 @@ end
 
 def makeSimilarTracks(mpd)
   query = "method=track.getsimilar" + "&artist=#{URI.encode(mpd.current_song().artist)}" + "&track=#{URI.encode(mpd.current_song().title)}"
-  track_arr = queryLastFM(query)
+  track_arr = queryLastFM(query)# + queryLastFM(query+"&page=2") + queryLastFM(query+"&page=3") + queryLastFM(query+"&page=4")
 
   return addExistingTracks(track_arr, mpd)
 end
 
 def makeTopTags(tag,mpd)
   query = "method=tag.gettoptracks" + "&tag=#{URI.encode(tag)}"
-  track_arr = queryLastFM(query) + queryLastFM(query+"&page=2") + queryLastFM(query+"&page=3")
+  track_arr = queryLastFM(query) + queryLastFM(query+"&page=2") + queryLastFM(query+"&page=3") + queryLastFM(query+"&page=4")
 
   return addExistingTracks(track_arr, mpd)
 end
@@ -152,8 +152,12 @@ OptionParser.new do |opts|
   end
   opts.on("-t", "--tag", "Get top tracks for specified tag") do
     options[:tag] = true
-    param = ARGV[0]
-    added = makeTopTags(param,mpd)
+    if ARGV[0] != nil
+    added = makeTopTags(ARGV[0],mpd)
+    else
+      STDERR.puts "No tag specified!"
+      exit 1
+    end
   end
   opts.on("-m", "--m3u", "Generate m3u file") do
     options[:m3u] = true
