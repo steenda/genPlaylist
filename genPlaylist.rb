@@ -81,11 +81,9 @@ def addExistingTracks(track_arr, mpd)
     end
   end
 
-
   for found in track_arr do
-#    puts found.artist + " - " + found.title
     index = own_songs.index {|own| own.title.casecmp(found.title) == 0 rescue nil}
-#    puts index
+#    puts found.artist + " - " + found.title + " at " + index
     if index != nil
       new_playlist.push(own_songs[index])
       added += 1
@@ -113,7 +111,7 @@ end
 
 def makeTopTags(tag,mpd)
   query = "method=tag.gettoptracks" + "&tag=#{URI.encode(tag)}"
-  track_arr = queryLastFM(query)
+  track_arr = queryLastFM(query) + queryLastFM(query+"&page=2") + queryLastFM(query+"&page=3")
 
   return addExistingTracks(track_arr, mpd)
 end
@@ -178,7 +176,7 @@ if added > 0
   if options[:m3u]
     genM3u(mpd.current_song().artist,mpd.playlist())
   end
-elsif options[:tag] ^ options[:similar] ^ !options[:artist]
+elsif (options[:tag] ^ options[:similar]) ^ options[:artist]
   STDERR.puts "Please specify one operation!"
   exit 1
 else
