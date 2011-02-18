@@ -177,8 +177,12 @@ if added > 0
   if options[:m3u]
     genM3u(mpd.current_song().artist,mpd.playlist())
   end
+elsif !options[:tag] && !options[:similar] && !options[:artist]
+  STDERR.puts "Please specify operation!"
+  exit 1
 else
   STDERR.puts "Could not generate playlist!"
+  exit 1
 end
 
 exit 0
