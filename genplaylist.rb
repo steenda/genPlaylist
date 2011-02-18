@@ -120,8 +120,8 @@ end
 added = 0
 options = {}
 
-if File.exist?(ENV['HOME']+'/.config/genPlaylist/genPlaylist.conf')
-  conf = YAML.load_file(ENV['HOME']+'/.config/genPlaylist/genPlaylist.conf')
+if File.exist?(ENV['HOME']+'/.config/genplaylist/genplaylist.conf')
+  conf = YAML.load_file(ENV['HOME']+'/.config/genplaylist/genplaylist.conf')
   mpd = MPD.new(conf['mpd_host'], conf['mpd_port'])
 else
   mpd = MPD.new("localhost", 6600)
